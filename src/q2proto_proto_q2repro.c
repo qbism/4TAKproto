@@ -28,6 +28,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define Q2REPRO_PROTOCOL_VERSION_MINIMUM 1024
 #define Q2REPRO_PROTOCOL_VERSION_CURRENT Q2REPRO_PROTOCOL_VERSION_MINIMUM
 
+#define PROTOCOL_VERSION_MINIMUM_4TAK 1025
+#define PROTOCOL_VERSION_CURRENT_4TAK PROTOCOL_VERSION_MINIMUM_4TAK
+
 q2proto_error_t q2proto_q2repro_parse_connect(q2proto_string_t *connect_str, q2proto_connect_t *parsed_connect)
 {
     parsed_connect->q2pro_nctype = 1; // NETCHAN_NEW
@@ -43,6 +46,16 @@ q2proto_error_t q2proto_q2repro_complete_connect(q2proto_connect_t *connect)
 {
     if (connect->version == 0)
         connect->version = Q2REPRO_PROTOCOL_VERSION_CURRENT;
+    connect->has_zlib = Q2PROTO_COMPRESSION_DEFLATE;
+    connect->qport &= 0xff;
+    connect->q2pro_nctype = 1; // force new netchan
+    return Q2P_ERR_SUCCESS;
+}
+
+q2proto_error_t q2proto_4TAK_complete_connect(q2proto_connect_t *connect)
+{
+    if (connect->version == 0)
+        connect->version = PROTOCOL_VERSION_CURRENT_4TAK;
     connect->has_zlib = Q2PROTO_COMPRESSION_DEFLATE;
     connect->qport &= 0xff;
     connect->q2pro_nctype = 1; // force new netchan
@@ -151,7 +164,7 @@ q2proto_error_t q2proto_q2repro_continue_serverdata(q2proto_clientcontext_t *con
 
     context->client_read = q2repro_client_read;
     context->client_write = q2repro_client_write;
-    context->server_protocol = Q2P_PROTOCOL_Q2REPRO;
+    context->server_protocol = Q2P_PROTOCOL_4TAK;
     context->protocol_version = serverdata->protocol_version;
     context->features.batch_move = true;
     context->features.userinfo_delta = true;
@@ -166,7 +179,7 @@ q2proto_error_t q2proto_q2repro_continue_serverdata(q2proto_clientcontext_t *con
         else
             context->features.server_game_api = Q2PROTO_GAME_VANILLA;
     } else
-        context->features.server_game_api = Q2PROTO_GAME_RERELEASE;
+        context->features.server_game_api = Q2PROTO_GAME_4TAK;
 
     return Q2P_ERR_SUCCESS;
 }
@@ -427,7 +440,7 @@ static q2proto_error_t q2repro_client_read_serverdata(q2proto_clientcontext_t *c
     int32_t protocol;
     READ_CHECKED(client_read, io_arg, protocol, i32);
 
-    if (protocol != PROTOCOL_Q2REPRO)
+    if (protocol != PROTOCOL_4TAK)
         return HANDLE_ERROR(client_read, io_arg, Q2P_ERR_BAD_DATA, "unexpected protocol %d", protocol);
 
     serverdata->protocol = protocol;
@@ -1372,11 +1385,11 @@ q2proto_error_t q2proto_q2repro_init_servercontext(q2proto_servercontext_t *cont
 static q2proto_error_t q2repro_server_fill_serverdata(q2proto_servercontext_t *context,
                                                       q2proto_svc_serverdata_t *serverdata)
 {
-    serverdata->protocol = PROTOCOL_Q2REPRO;
+    serverdata->protocol = PROTOCOL_4TAK;
     serverdata->protocol_version = context->protocol_version;
     serverdata->q2pro.extensions = context->server_info->game_api >= Q2PROTO_GAME_Q2PRO_EXTENDED;
     serverdata->q2pro.extensions_v2 = context->server_info->game_api >= Q2PROTO_GAME_Q2PRO_EXTENDED_V2;
-    serverdata->q2repro.game3_compat = context->server_info->game_api != Q2PROTO_GAME_RERELEASE;
+    serverdata->q2repro.game3_compat = context->server_info->game_api != Q2PROTO_GAME_4TAK;
     return Q2P_ERR_SUCCESS;
 }
 
@@ -1720,7 +1733,7 @@ static q2proto_error_t q2repro_server_write_serverdata(q2proto_servercontext_t *
                                                        const q2proto_svc_serverdata_t *serverdata)
 {
     WRITE_CHECKED(server_write, io_arg, u8, svc_serverdata);
-    WRITE_CHECKED(server_write, io_arg, i32, PROTOCOL_Q2REPRO);
+    WRITE_CHECKED(server_write, io_arg, i32, PROTOCOL_4TAK);
     WRITE_CHECKED(server_write, io_arg, i32, serverdata->servercount);
     WRITE_CHECKED(server_write, io_arg, u8, serverdata->attractloop);
     WRITE_CHECKED(server_write, io_arg, string, &serverdata->gamedir);

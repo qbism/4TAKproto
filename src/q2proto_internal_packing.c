@@ -335,7 +335,7 @@ _q2proto_packing_flavor_t _q2proto_get_packing_flavor(q2proto_servercontext_t *c
 {
     if (game_api)
         *game_api = context->server_info->game_api;
-    if (context->protocol == Q2P_PROTOCOL_Q2REPRO)
+    if ((context->protocol == Q2P_PROTOCOL_Q2REPRO) || (context->protocol == Q2P_PROTOCOL_4TAK))
         return _Q2P_PACKING_REPRO;
     else
         return _Q2P_PACKING_VANILLA;
