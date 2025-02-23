@@ -62,7 +62,7 @@ q2proto_error_t q2proto_kex_continue_serverdata(q2proto_clientcontext_t *context
     context->server_protocol = q2proto_protocol_from_netver(serverdata->protocol);
     context->protocol_version = serverdata->protocol_version;
     context->features.has_solid32 = true;
-    context->features.server_game_api = Q2PROTO_GAME_RERELEASE;
+    context->features.server_game_api = Q2PROTO_GAME_4TAK;
 
     return Q2P_ERR_SUCCESS;
 }
@@ -213,10 +213,10 @@ static q2proto_error_t kex_client_read(q2proto_clientcontext_t *context, uintptr
     case svc_temp_entity:
         svc_message->type = Q2P_SVC_TEMP_ENTITY;
         if (context->server_protocol == Q2P_PROTOCOL_KEX_DEMOS)
-            return q2proto_common_client_read_temp_entity_short(io_arg, Q2PROTO_GAME_RERELEASE,
+            return q2proto_common_client_read_temp_entity_short(io_arg, Q2PROTO_GAME_4TAK,
                                                                 &svc_message->temp_entity);
         else
-            return q2proto_common_client_read_temp_entity_float(io_arg, Q2PROTO_GAME_RERELEASE,
+            return q2proto_common_client_read_temp_entity_float(io_arg, Q2PROTO_GAME_4TAK,
                                                                 &svc_message->temp_entity);
 
     case svc_muzzleflash:

@@ -36,6 +36,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #define PROTOCOL_Q2PRO_DEMO_EXT_PLAYERFOG 3436
 #define PROTOCOL_Q2PRO_DEMO_EXT_CURRENT   3436
 #define PROTOCOL_Q2REPRO                  1038
+#define PROTOCOL_4TAK                     1440 //qb: new incompatible protocol
 #define PROTOCOL_KEX_DEMOS                2022
 #define PROTOCOL_KEX                      2023
 
@@ -351,6 +352,7 @@ static inline unsigned int max_configstrings_for_game(q2proto_game_api_t game)
     case Q2PROTO_GAME_Q2PRO_EXTENDED_V2:
         return MAX_CONFIGSTRINGS_EXTENDED;
     case Q2PROTO_GAME_RERELEASE:
+    case Q2PROTO_GAME_4TAK:
         return MAX_CONFIGSTRINGS_RERELEASE;
     }
     // shouldn't happen...

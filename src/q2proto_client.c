@@ -116,6 +116,8 @@ q2proto_error_t q2proto_complete_connect(q2proto_connect_t *connect)
         return q2proto_q2pro_complete_connect(connect);
     case Q2P_PROTOCOL_Q2REPRO:
         return q2proto_q2repro_complete_connect(connect);
+    case Q2P_PROTOCOL_4TAK:
+        return q2proto_4TAK_complete_connect(connect);
     }
 
     return Q2P_ERR_PROTOCOL_NOT_SUPPORTED;
@@ -193,6 +195,7 @@ q2proto_error_t q2proto_get_connect_arguments(char *args_str, size_t size, size_
         tail = q2proto_q2pro_connect_tail(connect);
         break;
     case Q2P_PROTOCOL_Q2REPRO:
+    case Q2P_PROTOCOL_4TAK:
         tail = q2proto_q2repro_connect_tail(connect);
         break;
     }
@@ -280,7 +283,8 @@ static q2proto_error_t default_client_packet_parse(q2proto_clientcontext_t *cont
     case PROTOCOL_Q2PRO_DEMO_EXT_LIMITS_2:
     case PROTOCOL_Q2PRO_DEMO_EXT_PLAYERFOG:
         return q2proto_q2pro_extdemo_continue_serverdata(context, io_arg, &svc_message->serverdata);
-    case PROTOCOL_Q2REPRO:
+        case Q2P_PROTOCOL_Q2REPRO:
+        case PROTOCOL_4TAK:
         return q2proto_q2repro_continue_serverdata(context, io_arg, &svc_message->serverdata);
     case PROTOCOL_KEX_DEMOS:
     case PROTOCOL_KEX:

@@ -31,6 +31,7 @@ Q2PROTO_PRIVATE_API q2proto_error_t q2proto_q2repro_parse_connect(q2proto_string
                                                                   q2proto_connect_t *parsed_connect);
 /// connect struct completion
 Q2PROTO_PRIVATE_API q2proto_error_t q2proto_q2repro_complete_connect(q2proto_connect_t *connect);
+Q2PROTO_PRIVATE_API q2proto_error_t q2proto_4TAK_complete_connect(q2proto_connect_t *connect);
 /// Get "connect" string tail
 Q2PROTO_PRIVATE_API const char *q2proto_q2repro_connect_tail(const q2proto_connect_t *connect);
 
