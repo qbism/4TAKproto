@@ -46,6 +46,8 @@ int q2proto_get_protocol_netver(q2proto_protocol_t protocol)
         return PROTOCOL_Q2PRO_DEMO_EXT_PLAYERFOG;
     case Q2P_PROTOCOL_Q2REPRO:
         return PROTOCOL_Q2REPRO;
+    case Q2P_PROTOCOL_4TAK:
+        return PROTOCOL_4TAK;
     case Q2P_PROTOCOL_KEX_DEMOS:
         return PROTOCOL_KEX_DEMOS;
     case Q2P_PROTOCOL_KEX:
@@ -72,8 +74,10 @@ q2proto_protocol_t q2proto_protocol_from_netver(int version)
         return Q2P_PROTOCOL_Q2PRO_EXTENDED_V2_DEMO;
     case PROTOCOL_Q2PRO_DEMO_EXT_PLAYERFOG:
         return Q2P_PROTOCOL_Q2PRO_EXTENDED_DEMO_PLAYERFOG;
-    case PROTOCOL_Q2REPRO:
+        case PROTOCOL_Q2REPRO:
         return Q2P_PROTOCOL_Q2REPRO;
+        case PROTOCOL_4TAK:
+        return Q2P_PROTOCOL_4TAK;
     case PROTOCOL_KEX_DEMOS:
         return Q2P_PROTOCOL_KEX_DEMOS;
     case PROTOCOL_KEX:
@@ -92,8 +96,10 @@ static inline unsigned int get_proto_mask_for_game(q2proto_game_api_t game)
         return BIT(Q2P_PROTOCOL_Q2PRO);
     case Q2PROTO_GAME_Q2PRO_EXTENDED_V2:
         return BIT(Q2P_PROTOCOL_Q2PRO);
-    case Q2PROTO_GAME_RERELEASE:
+        case Q2PROTO_GAME_RERELEASE:
         return BIT(Q2P_PROTOCOL_Q2REPRO);
+        case Q2PROTO_GAME_4TAK:
+        return BIT(Q2P_PROTOCOL_4TAK);
     }
 
     return 0;
@@ -142,6 +148,8 @@ q2proto_multicast_protocol_t q2proto_get_multicast_protocol(q2proto_protocol_t *
         return Q2P_PROTOCOL_MULTICAST_Q2PRO_EXT;
     case Q2PROTO_GAME_RERELEASE:
         return Q2P_PROTOCOL_MULTICAST_FLOAT;
+    case Q2PROTO_GAME_4TAK:
+        return Q2P_PROTOCOL_MULTICAST_Q2PRO_EXT; //qb: int23
     }
 
 fail:
