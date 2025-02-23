@@ -32,6 +32,8 @@ typedef enum q2proto_game_api_e {
     Q2PROTO_GAME_Q2PRO_EXTENDED_V2,
     /// Rerelease game
     Q2PROTO_GAME_RERELEASE,
+    /// 4TAK game
+    Q2PROTO_GAME_4TAK,
 } q2proto_game_api_t;
 
 #endif // Q2PROTO_GAME_API_H_

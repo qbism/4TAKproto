@@ -1,3 +1,5 @@
+This fork is modified for the 4TAK engine.
+
 # q2proto - A Quake 2 protocol abstraction library
 Provides functions to consume and produce Quake 2 network protocol messages
 for different variants of the Quake 2 protocol.
