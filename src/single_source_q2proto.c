@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "q2proto_client.c"
 #include "q2proto_coords.c"
 #include "q2proto_crc.c"
+#include "q2proto_error.c"
 #include "q2proto_internal_common.c"
 #include "q2proto_internal_debug.c"
 #include "q2proto_internal_download.c"

@@ -22,6 +22,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #ifndef Q2PROTO_ERROR_H_
 #define Q2PROTO_ERROR_H_
 
+#include "q2proto_defs.h"
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -72,6 +74,9 @@ typedef enum q2proto_error_e {
     /// Raw compressed download data not supported
     Q2P_ERR_RAW_COMPRESS_NOT_SUPPORTED = -304,
 } q2proto_error_t;
+
+/// Return a string representation of the given error code. Intended for error reporting.
+Q2PROTO_PUBLIC_API const char *q2proto_error_string(q2proto_error_t err);
 
 #if defined(__cplusplus)
 } // extern "C"

@@ -11,6 +11,7 @@ q2proto_src = [
   '../src/q2proto_client.c',
   '../src/q2proto_coords.c',
   '../src/q2proto_crc.c',
+  '../src/q2proto_error.c',
   '../src/q2proto_internal_common.c',
   '../src/q2proto_internal_debug.c',
   '../src/q2proto_internal_download.c',
