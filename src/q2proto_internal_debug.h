@@ -25,7 +25,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 #include "q2proto/q2proto.h"
 #include "q2proto_internal_common.h"
 
-/**\def SHOWNET
+/**\def Q2PROTO_SHOWNET
  * Output 'shownet' feedback.
  */
 #if Q2PROTO_SHOWNET
