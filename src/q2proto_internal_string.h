@@ -28,6 +28,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
     #include <malloc.h>
     #if !defined(alloca)
         #define alloca _alloca
+    #endif
+#else
+    #include <alloca.h>
 #endif
 
 #include <errno.h>
