@@ -28,9 +28,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
     #include <malloc.h>
     #if !defined(alloca)
         #define alloca _alloca
-    #endif
-#elif !defined(__FreeBSD__) && !defined(__OpenBSD__)
-    #include <alloca.h>
 #endif
 
 #include <errno.h>
