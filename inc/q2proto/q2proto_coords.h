@@ -24,6 +24,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "q2proto_defs.h"
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #if defined(__cplusplus)
@@ -43,24 +44,26 @@ typedef float q2proto_vec3_t[3];
  * - Full setter: `q2proto_<VEC_TYPE>_set_<TYPE_NAME>`
  * - Full getter: `q2proto_<VEC_TYPE>_get_<TYPE_NAME>`
  */
-#define _GENERATE_VARIANT_FUNCTIONS(VEC_TYPE, TYPE_NAME, TYPE_TYPE, NUM_COMPS)                                    \
-    Q2PROTO_PUBLIC_API void q2proto_##VEC_TYPE##_set_##TYPE_NAME##_comp(q2proto_##VEC_TYPE##_t *coord, int comp,  \
-                                                                        TYPE_TYPE x);                             \
-    Q2PROTO_PUBLIC_API TYPE_TYPE q2proto_##VEC_TYPE##_get_##TYPE_NAME##_comp(const q2proto_##VEC_TYPE##_t *coord, \
-                                                                             int comp);                           \
-    static inline void q2proto_##VEC_TYPE##_set_##TYPE_NAME(q2proto_##VEC_TYPE##_t *vec,                          \
-                                                            const TYPE_TYPE in[NUM_COMPS])                        \
-    {                                                                                                             \
-        for (int c = 0; c < NUM_COMPS; c++)                                                                       \
-            q2proto_##VEC_TYPE##_set_##TYPE_NAME##_comp(vec, c, in[c]);                                           \
-    }                                                                                                             \
-    static inline void q2proto_##VEC_TYPE##_get_##TYPE_NAME(const q2proto_##VEC_TYPE##_t *vec,                    \
-                                                            TYPE_TYPE out[NUM_COMPS])                             \
-    {                                                                                                             \
-        for (int c = 0; c < NUM_COMPS; c++)                                                                       \
-            out[c] = q2proto_##VEC_TYPE##_get_##TYPE_NAME##_comp(vec, c);                                         \
+#define _GENERATE_VARIANT_FUNCTIONS(VEC_TYPE, TYPE_NAME, TYPE_TYPE, NUM_COMPS)                                       \
+    Q2PROTO_PUBLIC_API bool q2proto_##VEC_TYPE##_is_comp_##TYPE_NAME(const q2proto_##VEC_TYPE##_t *coord, int comp); \
+    Q2PROTO_PUBLIC_API void q2proto_##VEC_TYPE##_set_##TYPE_NAME##_comp(q2proto_##VEC_TYPE##_t *coord, int comp,     \
+                                                                        TYPE_TYPE x);                                \
+    Q2PROTO_PUBLIC_API TYPE_TYPE q2proto_##VEC_TYPE##_get_##TYPE_NAME##_comp(const q2proto_##VEC_TYPE##_t *coord,    \
+                                                                             int comp);                              \
+    static inline void q2proto_##VEC_TYPE##_set_##TYPE_NAME(q2proto_##VEC_TYPE##_t *vec,                             \
+                                                            const TYPE_TYPE in[NUM_COMPS])                           \
+    {                                                                                                                \
+        for (int c = 0; c < NUM_COMPS; c++)                                                                          \
+            q2proto_##VEC_TYPE##_set_##TYPE_NAME##_comp(vec, c, in[c]);                                              \
+    }                                                                                                                \
+    static inline void q2proto_##VEC_TYPE##_get_##TYPE_NAME(const q2proto_##VEC_TYPE##_t *vec,                       \
+                                                            TYPE_TYPE out[NUM_COMPS])                                \
+    {                                                                                                                \
+        for (int c = 0; c < NUM_COMPS; c++)                                                                          \
+            out[c] = q2proto_##VEC_TYPE##_get_##TYPE_NAME##_comp(vec, c);                                            \
     }
 #define _GENERATE_VARIANT_FUNCTIONS_SINGLE(VEC_TYPE, TYPE_NAME, TYPE_TYPE)                                    \
+    Q2PROTO_PUBLIC_API bool q2proto_##VEC_TYPE##_is_##TYPE_NAME(const q2proto_##VEC_TYPE##_t *coord);         \
     Q2PROTO_PUBLIC_API void q2proto_##VEC_TYPE##_set_##TYPE_NAME(q2proto_##VEC_TYPE##_t *coord, TYPE_TYPE x); \
     Q2PROTO_PUBLIC_API TYPE_TYPE q2proto_##VEC_TYPE##_get_##TYPE_NAME(const q2proto_##VEC_TYPE##_t *coord);
 
@@ -332,17 +335,20 @@ typedef struct q2proto_angles_delta_s {
  * Fills \c ANGLES_DELTA with values from \c TO and determines delta bits by comparing
  * with \c FROM.
  */
-#define Q2PROTO_SET_ANGLES_DELTA(ANGLES_DELTA, TO, FROM, ANGLE_TYPE)           \
-    do {                                                                       \
-        (ANGLES_DELTA).delta_bits = 0;                                         \
-        if ((TO)[0] != (FROM)[0])                                              \
-            (ANGLES_DELTA).delta_bits |= BIT(0);                               \
-        if ((TO)[1] != (FROM)[1])                                              \
-            (ANGLES_DELTA).delta_bits |= BIT(1);                               \
-        if ((TO)[2] != (FROM)[2])                                              \
-            (ANGLES_DELTA).delta_bits |= BIT(2);                               \
-        if ((ANGLES_DELTA).delta_bits != 0)                                    \
-            q2proto_var_angles_set_##ANGLE_TYPE(&(ANGLES_DELTA).values, (TO)); \
+#define Q2PROTO_SET_ANGLES_DELTA(ANGLES_DELTA, TO, FROM, ANGLE_TYPE)                        \
+    do {                                                                                    \
+        (ANGLES_DELTA).delta_bits = 0;                                                      \
+        if ((TO)[0] != (FROM)[0])                                                           \
+            (ANGLES_DELTA).delta_bits |= BIT(0);                                            \
+        if ((TO)[1] != (FROM)[1])                                                           \
+            (ANGLES_DELTA).delta_bits |= BIT(1);                                            \
+        if ((TO)[2] != (FROM)[2])                                                           \
+            (ANGLES_DELTA).delta_bits |= BIT(2);                                            \
+        if ((ANGLES_DELTA).delta_bits != 0) {                                               \
+            q2proto_var_angles_set_##ANGLE_TYPE##_comp(&(ANGLES_DELTA).values, 0, (TO)[0]); \
+            q2proto_var_angles_set_##ANGLE_TYPE##_comp(&(ANGLES_DELTA).values, 1, (TO)[1]); \
+            q2proto_var_angles_set_##ANGLE_TYPE##_comp(&(ANGLES_DELTA).values, 2, (TO)[2]); \
+        }                                                                                   \
     } while (0)
 
 /**\def Q2PROTO_APPLY_ANGLES_DELTA

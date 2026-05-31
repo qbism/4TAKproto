@@ -2,7 +2,7 @@
 Copyright (C) 1997-2001 Id Software, Inc.
 Copyright (C) 2003-2011 Richard Stanway
 Copyright (C) 2003-2024 Andrey Nazarov
-Copyright (C) 2024 Frank Richter
+Copyright (C) 2024-2026 Frank Richter
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -154,12 +154,12 @@ q2proto_error_t q2proto_q2repro_continue_serverdata(q2proto_clientcontext_t *con
     serverdata->q2pro.extensions = q2repro_flags & Q2PRO_PF_EXTENSIONS;
     serverdata->q2pro.extensions_v2 = q2repro_flags & Q2PRO_PF_EXTENSIONS_2;
     serverdata->q2repro.game3_compat = q2repro_flags & Q2REPRO_PF_GAME3_COMPAT;
-    READ_CHECKED(client_read, io_arg, serverdata->q2repro.server_fps, u8);
+    READ_CHECKED(client_read, io_arg, serverdata->server_fps, u8);
     if (serverdata->attractloop) {
         /* HACK: server_fps for demos was computed using floating point math,
          * leading to some rounding errors.
          * Round FPS to nearest multiple of 10 */
-        serverdata->q2repro.server_fps = (((int)serverdata->q2repro.server_fps + 5) / 10) * 10;
+        serverdata->server_fps = (((int)serverdata->server_fps + 5) / 10) * 10;
     }
 
     context->client_read = q2repro_client_read;
@@ -562,14 +562,14 @@ static q2proto_error_t q2repro_client_read_entity_delta(q2proto_clientcontext_t 
         if (delta_bits_check(sound_word, SOUND_FLAG_VOLUME, &entity_state->delta_bits, Q2P_ESD_LOOP_VOLUME)) {
             MAYBE_UNUSED uint8_t loop_volume;
             READ_CHECKED(client_read, io_arg, loop_volume, u8);
-#if Q2PROTO_ENTITY_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_ENTITY_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_ENTITY_LOOP_ALPHA_SCALE_FX64
             entity_state->loop_volume = loop_volume;
 #endif
         }
         if (delta_bits_check(sound_word, SOUND_FLAG_ATTENUATION, &entity_state->delta_bits, Q2P_ESD_LOOP_ATTENUATION)) {
             MAYBE_UNUSED uint8_t loop_attenuation;
             READ_CHECKED(client_read, io_arg, loop_attenuation, u8);
-#if Q2PROTO_ENTITY_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_ENTITY_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_ENTITY_LOOP_ALPHA_SCALE_FX64
             entity_state->loop_attenuation = loop_attenuation;
 #endif
         }
@@ -589,7 +589,7 @@ static q2proto_error_t q2repro_client_read_entity_delta(q2proto_clientcontext_t 
             READ_CHECKED(client_read, io_arg, effects_more, u16);
         else if (bits & U_MOREFX8)
             READ_CHECKED(client_read, io_arg, effects_more, u8);
-#if Q2PROTO_ENTITY_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_ENTITY_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_ENTITY_LOOP_ALPHA_SCALE_FX64
         entity_state->effects_more = effects_more;
 #endif
     }
@@ -597,7 +597,7 @@ static q2proto_error_t q2repro_client_read_entity_delta(q2proto_clientcontext_t 
     if (delta_bits_check(bits, U_ALPHA, &entity_state->delta_bits, Q2P_ESD_ALPHA)) {
         MAYBE_UNUSED uint8_t alpha;
         READ_CHECKED(client_read, io_arg, alpha, u8);
-#if Q2PROTO_ENTITY_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_ENTITY_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_ENTITY_LOOP_ALPHA_SCALE_FX64
         entity_state->alpha = alpha;
 #endif
     }
@@ -605,7 +605,7 @@ static q2proto_error_t q2repro_client_read_entity_delta(q2proto_clientcontext_t 
     if (delta_bits_check(bits, U_SCALE, &entity_state->delta_bits, Q2P_ESD_SCALE)) {
         MAYBE_UNUSED uint8_t scale;
         READ_CHECKED(client_read, io_arg, scale, u8);
-#if Q2PROTO_ENTITY_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_ENTITY_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_ENTITY_LOOP_ALPHA_SCALE_FX64
         entity_state->scale = scale;
 #endif
     }
@@ -701,7 +701,7 @@ static q2proto_error_t q2repro_client_read_playerstate(q2proto_clientcontext_t *
         uint16_t gun_index_and_skin;
         READ_CHECKED(client_read, io_arg, gun_index_and_skin, u16);
         playerstate->gunindex = gun_index_and_skin & Q2PRO_GUNINDEX_MASK;
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_GUNSKIN
         playerstate->gunskin = gun_index_and_skin >> Q2PRO_GUNINDEX_BITS;
 #endif
     }
@@ -720,7 +720,7 @@ static q2proto_error_t q2repro_client_read_playerstate(q2proto_clientcontext_t *
     if (flags & PS_BLEND) {
         q2proto_color_delta_t damage_blend = {0};
         CHECKED(client_read, io_arg, client_read_q2pro_extv2_blends(io_arg, &playerstate->blend, &damage_blend));
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED_V2
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_DAMAGE_BLEND
         memcpy(&playerstate->damage_blend, &damage_blend, sizeof(damage_blend));
 #endif
     }
@@ -740,7 +740,7 @@ static q2proto_error_t q2repro_client_read_playerstate(q2proto_clientcontext_t *
                 READ_CHECKED(client_read, io_arg, playerstate->stats[i], i16);
     }
 
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_RERELEASE
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_GUNRATE_VIEWHEIGHT
     if (delta_bits_check(extraflags, EPS_GUNRATE, &playerstate->delta_bits, Q2P_PSD_GUNRATE))
         READ_CHECKED(client_read, io_arg, playerstate->gunrate, u8);
 
@@ -1441,13 +1441,13 @@ static void q2repro_server_make_entity_state_delta(q2proto_servercontext_t *cont
     if (to->effects != from->effects) {
         if ((uint32_t)to->effects != (uint32_t)from->effects)
             delta->delta_bits |= Q2P_ESD_EFFECTS;
-#if Q2PROTO_ENTITY_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_ENTITY_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_ENTITY_LOOP_ALPHA_SCALE_FX64
         if ((to->effects >> 32) != (from->effects >> 32))
             delta->delta_bits |= Q2P_ESD_EFFECTS_MORE;
 #endif
         if (delta->delta_bits & (Q2P_ESD_EFFECTS | Q2P_ESD_EFFECTS_MORE)) {
             delta->effects = to->effects;
-#if Q2PROTO_ENTITY_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_ENTITY_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_ENTITY_LOOP_ALPHA_SCALE_FX64
             delta->effects_more = to->effects >> 32;
 #endif
         }
@@ -1491,7 +1491,7 @@ static void q2repro_server_make_entity_state_delta(q2proto_servercontext_t *cont
         delta->sound = to->sound;
     }
 
-#if Q2PROTO_ENTITY_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_ENTITY_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_ENTITY_LOOP_ALPHA_SCALE_FX64
     if (to->loop_volume != from->loop_volume) {
         delta->delta_bits |= Q2P_ESD_LOOP_VOLUME;
         delta->loop_volume = to->loop_volume;
@@ -1555,7 +1555,9 @@ static void q2repro_server_make_player_state_delta(q2proto_servercontext_t *cont
 
     if (memcmp(&to->pm_delta_angles, &from->pm_delta_angles, sizeof(to->pm_delta_angles)) != 0) {
         delta->delta_bits |= Q2P_PSD_PM_DELTA_ANGLES;
-        q2proto_var_angles_set_short(&delta->pm_delta_angles, to->pm_delta_angles);
+        q2proto_var_angles_set_short_comp(&delta->pm_delta_angles, 0, to->pm_delta_angles[0] & 0xffff);
+        q2proto_var_angles_set_short_comp(&delta->pm_delta_angles, 1, to->pm_delta_angles[1] & 0xffff);
+        q2proto_var_angles_set_short_comp(&delta->pm_delta_angles, 2, to->pm_delta_angles[2] & 0xffff);
     }
 
     if (memcmp(to->viewoffset, from->viewoffset, sizeof(to->viewoffset)) != 0) {
@@ -1579,7 +1581,7 @@ static void q2repro_server_make_player_state_delta(q2proto_servercontext_t *cont
             q2proto_var_color_set_byte_comp(&delta->blend.values, c, to->blend[c]);
             delta->blend.delta_bits |= BIT(c);
         }
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED_V2
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_DAMAGE_BLEND
         if (to->damage_blend[c] != from->damage_blend[c]) {
             q2proto_var_color_set_byte_comp(&delta->damage_blend.values, c, to->damage_blend[c]);
             delta->damage_blend.delta_bits |= BIT(c);
@@ -1621,13 +1623,13 @@ static void q2repro_server_make_player_state_delta(q2proto_servercontext_t *cont
 
     if (to->gunindex != from->gunindex)
         delta->delta_bits |= Q2P_PSD_GUNINDEX;
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_GUNSKIN
     if (to->gunskin != from->gunskin)
         delta->delta_bits |= Q2P_PSD_GUNSKIN;
 #endif
     if (delta->delta_bits & (Q2P_PSD_GUNINDEX | Q2P_PSD_GUNSKIN)) {
         delta->gunindex = to->gunindex;
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_GUNSKIN
         delta->gunskin = to->gunskin;
 #endif
     }
@@ -1639,7 +1641,7 @@ static void q2repro_server_make_player_state_delta(q2proto_servercontext_t *cont
         }
     }
 
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_RERELEASE
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_GUNRATE_VIEWHEIGHT
     if (to->gunrate != from->gunrate) {
         delta->delta_bits |= Q2P_PSD_GUNRATE;
         delta->gunrate = to->gunrate;
@@ -1694,6 +1696,19 @@ static q2proto_error_t q2repro_server_write(q2proto_servercontext_t *context, ui
     case Q2P_SVC_SPAWNBASELINE:
         return q2repro_server_write_spawnbaseline(context, io_arg, &svc_message->spawnbaseline);
 
+    case Q2P_SVC_TEMP_ENTITY:
+        // Usually written by game, but may be needed for demo writing
+        return q2proto_common_server_write_temp_entity_float(io_arg, context->server_info->game_api,
+                                                             &svc_message->temp_entity);
+
+    case Q2P_SVC_MUZZLEFLASH:
+        // Usually written by game, but may be needed for demo writing
+        return q2proto_common_server_write_muzzleflash(io_arg, svc_muzzleflash, &svc_message->muzzleflash, MZ_SILENCED);
+
+    case Q2P_SVC_MUZZLEFLASH2:
+        // Usually written by game, but may be needed for demo writing
+        return q2proto_q2repro_server_write_muzzleflash2(io_arg, &svc_message->muzzleflash);
+
     case Q2P_SVC_CENTERPRINT:
         return q2proto_common_server_write_centerprint(io_arg, &svc_message->centerprint);
 
@@ -1703,6 +1718,10 @@ static q2proto_error_t q2repro_server_write(q2proto_servercontext_t *context, ui
     case Q2P_SVC_FRAME:
         return q2repro_server_write_frame(context, io_arg, &svc_message->frame);
 
+    case Q2P_SVC_INVENTORY:
+        // Usually written by game, but may be needed for demo writing
+        return q2proto_common_server_write_inventory(io_arg, &svc_message->inventory);
+
     case Q2P_SVC_FRAME_ENTITY_DELTA:
         return q2repro_server_write_frame_entity_delta(context, io_arg, &svc_message->frame_entity_delta);
 
@@ -1710,21 +1729,29 @@ static q2proto_error_t q2repro_server_write(q2proto_servercontext_t *context, ui
         // Although typically written by the game, this is useful when writing demos
         return q2proto_common_server_write_layout(io_arg, &svc_message->layout);
 
+    case Q2P_SVC_DAMAGE:
+        // Usually written by game, but may be needed for demo writing
+        return q2proto_q2repro_server_write_damage(io_arg, &svc_message->damage);
+
     case Q2P_SVC_FOG:
         // Although typically written by the game, this is useful when writing demos
         return q2proto_q2repro_server_write_fog(io_arg, &svc_message->fog);
 
+    case Q2P_SVC_POI:
+        // Although typically written by the game, this is useful when writing demos
+        return q2proto_q2repro_server_write_poi(io_arg, &svc_message->poi);
+
+    case Q2P_SVC_HELP_PATH:
+        // Although typically written by the game, this is useful when writing demos
+        return q2proto_q2repro_server_write_help_path(io_arg, &svc_message->help_path);
+
+    case Q2P_SVC_ACHIEVEMENT:
+        // Although typically written by the game, this is useful when writing demos
+        return q2proto_q2repro_server_write_achievement(io_arg, &svc_message->achievement);
+
     default:
         break;
     }
-
-    /* The following messages are currently not covered,
-     * as they're actually sent by game code:
-     *  muzzleflash
-     *  muzzleflash2
-     *  temp_entity
-     *  inventory
-     */
 
     return Q2P_ERR_NOT_IMPLEMENTED;
 }
@@ -1755,7 +1782,7 @@ static q2proto_error_t q2repro_server_write_serverdata(q2proto_servercontext_t *
     if (serverdata->q2repro.game3_compat)
         q2pro_flags |= Q2REPRO_PF_GAME3_COMPAT;
     WRITE_CHECKED(client_read, io_arg, u16, q2pro_flags);
-    WRITE_CHECKED(server_write, io_arg, u8, serverdata->q2repro.server_fps);
+    WRITE_CHECKED(server_write, io_arg, u8, serverdata->server_fps);
     return Q2P_ERR_SUCCESS;
 }
 
@@ -1796,7 +1823,7 @@ static q2proto_error_t q2proto_q2repro_server_write_entity_state_delta(
     if (entity_state_delta->delta_bits & Q2P_ESD_EFFECTS)
         bits |= q2proto_common_choose_width_flags(entity_state_delta->effects, U_EFFECTS8, U_EFFECTS16, true);
 
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_ENTITY_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_ENTITY_LOOP_ALPHA_SCALE_FX64
     if (entity_state_delta->delta_bits & Q2P_ESD_EFFECTS_MORE)
         bits |= q2proto_common_choose_width_flags(entity_state_delta->effects_more, U_MOREFX8, U_MOREFX16, true);
 #endif
@@ -1930,7 +1957,7 @@ static q2proto_error_t q2proto_q2repro_server_write_entity_state_delta(
         if (entity_state_delta->delta_bits & Q2P_ESD_LOOP_VOLUME)
             sound_word |= SOUND_FLAG_VOLUME;
         WRITE_CHECKED(server_write, io_arg, u16, sound_word);
-#if Q2PROTO_ENTITY_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_ENTITY_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_ENTITY_LOOP_ALPHA_SCALE_FX64
         if (sound_word & SOUND_FLAG_VOLUME)
             WRITE_CHECKED(server_write, io_arg, u8, entity_state_delta->loop_volume);
         if (sound_word & SOUND_FLAG_ATTENUATION)
@@ -1942,7 +1969,7 @@ static q2proto_error_t q2proto_q2repro_server_write_entity_state_delta(
     if (bits & U_SOLID)
         WRITE_CHECKED(server_write, io_arg, u32, entity_state_delta->solid);
 
-#if Q2PROTO_ENTITY_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_ENTITY_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_ENTITY_LOOP_ALPHA_SCALE_FX64
     if ((bits & U_MOREFX32) == U_MOREFX32)
         WRITE_CHECKED(server_write, io_arg, u32, entity_state_delta->effects_more);
     else if (bits & U_MOREFX16)
@@ -2028,7 +2055,7 @@ static q2proto_error_t q2repro_server_write_playerstate(q2proto_servercontext_t 
         flags |= PS_KICKANGLES;
     if (playerstate->blend.delta_bits != 0)
         flags |= PS_BLEND;
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED_V2
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_DAMAGE_BLEND
     if (playerstate->damage_blend.delta_bits != 0)
         flags |= PS_BLEND;
 #endif
@@ -2050,7 +2077,7 @@ static q2proto_error_t q2repro_server_write_playerstate(q2proto_servercontext_t 
         *extraflags |= EPS_GUNRATE;
     if (playerstate->delta_bits & Q2P_PSD_CLIENTNUM)
         *extraflags |= EPS_CLIENTNUM;
-#if Q2PROTO_PLAYER_STATE_FEATURES == Q2PROTO_FEATURES_Q2PRO_EXTENDED_V2
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_FOG
     if (playerstate->fog.flags != 0 || playerstate->fog.global.color.delta_bits != 0
         || playerstate->fog.height.start_color.delta_bits != 0 || playerstate->fog.height.end_color.delta_bits != 0)
         return Q2P_ERR_BAD_DATA;
@@ -2126,7 +2153,7 @@ static q2proto_error_t q2repro_server_write_playerstate(q2proto_servercontext_t 
 
     if (flags & PS_WEAPONINDEX) {
         uint16_t gun_index_and_skin = playerstate->gunindex;
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_GUNSKIN
         gun_index_and_skin |= (playerstate->gunskin << Q2PRO_GUNINDEX_BITS);
 #endif
         WRITE_CHECKED(server_write, io_arg, u16, gun_index_and_skin);
@@ -2153,7 +2180,7 @@ static q2proto_error_t q2repro_server_write_playerstate(q2proto_servercontext_t 
 
     if (flags & PS_BLEND) {
         const q2proto_color_delta_t *damage_blend;
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED_V2
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_DAMAGE_BLEND
         damage_blend = &playerstate->damage_blend;
 #else
         const q2proto_color_delta_t null_blend = {0};
@@ -2175,7 +2202,7 @@ static q2proto_error_t q2repro_server_write_playerstate(q2proto_servercontext_t 
                 WRITE_CHECKED(server_write, io_arg, i16, playerstate->stats[i]);
     }
 
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_RERELEASE
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_GUNRATE_VIEWHEIGHT
     if (*extraflags & EPS_GUNRATE)
         WRITE_CHECKED(server_write, io_arg, u8, playerstate->gunrate);
 
@@ -2244,6 +2271,30 @@ static q2proto_error_t q2repro_server_write_frame_entity_delta(
 
     return q2proto_q2repro_server_write_entity_state_delta(context, io_arg, frame_entity_delta->newnum,
                                                            &frame_entity_delta->entity_delta);
+}
+
+q2proto_error_t q2proto_q2repro_server_write_damage(uintptr_t io_arg, const q2proto_svc_damage_t *damage)
+{
+    WRITE_CHECKED(server_write, io_arg, u8, svc_rr_damage);
+    WRITE_CHECKED(server_write, io_arg, u8, damage->count);
+    for (unsigned int i = 0; i < damage->count; i++) {
+        uint8_t encoded_damage = 0;
+        encoded_damage = damage->damage[i].damage & 0x1f;
+        if (damage->damage[i].health)
+            encoded_damage |= 0x20;
+        if (damage->damage[i].armor)
+            encoded_damage |= 0x40;
+        if (damage->damage[i].shield)
+            encoded_damage |= 0x80;
+        WRITE_CHECKED(server_write, io_arg, u8, encoded_damage);
+        CHECKED(server_write, io_arg,
+                q2proto_common_server_write_packed_direction(io_arg, damage->damage[i].direction));
+
+        if (i >= Q2PROTO_MAX_DAMAGE_INDICATORS)
+            break;
+    }
+
+    return Q2P_ERR_SUCCESS;
 }
 
 q2proto_error_t q2proto_q2repro_server_write_fog(uintptr_t io_arg, const q2proto_svc_fog_t *fog)
@@ -2328,6 +2379,51 @@ q2proto_error_t q2proto_q2repro_server_write_fog(uintptr_t io_arg, const q2proto
     if (bits & FOG_RR_BIT_HEIGHTFOG_END_DIST)
         WRITE_CHECKED(server_write, io_arg, i32, q2proto_var_coord_get_int_unscaled(&fog->height.end_dist));
 
+    return Q2P_ERR_SUCCESS;
+}
+
+q2proto_error_t q2proto_q2repro_server_write_muzzleflash2(uintptr_t io_arg,
+                                                          const q2proto_svc_muzzleflash_t *muzzleflash)
+{
+    if (muzzleflash->weapon > 255)
+        WRITE_CHECKED(server_write, io_arg, u8, svc_rr_muzzleflash3);
+    else
+        WRITE_CHECKED(server_write, io_arg, u8, svc_muzzleflash2);
+    WRITE_CHECKED(server_write, io_arg, i16, muzzleflash->entity);
+    if (muzzleflash->weapon > 255)
+        WRITE_CHECKED(server_write, io_arg, u16, muzzleflash->weapon);
+    else
+        WRITE_CHECKED(server_write, io_arg, u8, muzzleflash->weapon);
+    return Q2P_ERR_SUCCESS;
+}
+
+q2proto_error_t q2proto_q2repro_server_write_poi(uintptr_t io_arg, const q2proto_svc_poi_t *poi)
+{
+    WRITE_CHECKED(server_write, io_arg, u8, svc_rr_poi);
+    WRITE_CHECKED(server_write, io_arg, u16, poi->key);
+    WRITE_CHECKED(server_write, io_arg, u16, poi->time);
+    CHECKED(server_write, io_arg, server_write_float_coord(io_arg, poi->pos));
+    WRITE_CHECKED(server_write, io_arg, u16, poi->image);
+    WRITE_CHECKED(server_write, io_arg, u8, poi->color);
+    WRITE_CHECKED(server_write, io_arg, u8, poi->flags);
+    return Q2P_ERR_SUCCESS;
+}
+
+q2proto_error_t q2proto_q2repro_server_write_help_path(uintptr_t io_arg, const q2proto_svc_help_path_t *help_path)
+{
+    WRITE_CHECKED(server_write, io_arg, u8, svc_rr_help_path);
+    WRITE_CHECKED(server_write, io_arg, u8, help_path->start);
+    CHECKED(server_write, io_arg, server_write_float_coord(io_arg, help_path->pos));
+    CHECKED(server_write, io_arg,
+            q2proto_common_server_write_packed_direction(io_arg, help_path->dir));
+    return Q2P_ERR_SUCCESS;
+}
+
+q2proto_error_t q2proto_q2repro_server_write_achievement(uintptr_t io_arg,
+                                                         const q2proto_svc_achievement_t *achievement)
+{
+    WRITE_CHECKED(server_write, io_arg, u8, svc_rr_achievement);
+    WRITE_CHECKED(server_write, io_arg, string, &achievement->id);
     return Q2P_ERR_SUCCESS;
 }
 

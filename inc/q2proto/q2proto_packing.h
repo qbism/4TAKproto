@@ -34,23 +34,23 @@ typedef struct q2proto_packed_entity_state_s {
     uint16_t modelindex4;
     uint16_t frame;
     uint32_t skinnum;
-#if Q2PROTO_ENTITY_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_ENTITY_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_ENTITY_LOOP_ALPHA_SCALE_FX64
     uint64_t effects;
 #else
     uint32_t effects;
 #endif
     uint32_t renderfx;
     int32_t origin[3];
-    int16_t angles[3];
+    int32_t angles[3];
     int32_t old_origin[3];
     uint16_t sound;
-#if Q2PROTO_ENTITY_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_ENTITY_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_ENTITY_LOOP_ALPHA_SCALE_FX64
     uint8_t loop_volume;
     uint8_t loop_attenuation;
 #endif
     uint8_t event;
     uint32_t solid;
-#if Q2PROTO_ENTITY_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_ENTITY_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_ENTITY_LOOP_ALPHA_SCALE_FX64
     uint8_t alpha;
     uint8_t scale;
 #endif
@@ -64,31 +64,31 @@ typedef struct q2proto_packed_player_state_s {
     uint16_t pm_time;
     uint16_t pm_flags;
     int16_t pm_gravity;
-    int16_t pm_delta_angles[3];
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_RERELEASE
+    int32_t pm_delta_angles[3];
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_GUNRATE_VIEWHEIGHT
     int8_t pm_viewheight;
 #endif
     int16_t viewoffset[3];
-    int16_t viewangles[3];
+    int32_t viewangles[3];
     int16_t kick_angles[3];
     uint16_t gunindex;
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_GUNSKIN
     uint8_t gunskin;
 #endif
     uint16_t gunframe;
-    int16_t gunoffset[3];
-    int16_t gunangles[3];
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_RERELEASE
+    int32_t gunoffset[3];
+    int32_t gunangles[3];
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_GUNRATE_VIEWHEIGHT
     uint8_t gunrate;
 #endif
     uint8_t blend[4];
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED_V2
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_DAMAGE_BLEND
     uint8_t damage_blend[4];
 #endif
     uint8_t fov;
     uint8_t rdflags;
     int16_t stats[Q2PROTO_STATS];
-#if Q2PROTO_PLAYER_STATE_FEATURES == Q2PROTO_FEATURES_Q2PRO_EXTENDED_V2
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_FOG
     uint8_t fog_color[3];
     uint16_t fog_density;
     uint16_t fog_skyfactor;
@@ -141,6 +141,8 @@ typedef enum _q2proto_packing_flavor_e {
     _Q2P_PACKING_VANILLA = 0,
     // Pack for q2repro protocol
     _Q2P_PACKING_REPRO = 1,
+    // Pack for KEX protocol
+    _Q2P_PACKING_KEX = 2,
 } _q2proto_packing_flavor_t;
 
 // Call actual entity packing function

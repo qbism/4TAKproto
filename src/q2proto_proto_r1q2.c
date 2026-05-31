@@ -2,7 +2,7 @@
 Copyright (C) 1997-2001 Id Software, Inc.
 Copyright (C) 2003-2011 Richard Stanway
 Copyright (C) 2003-2024 Andrey Nazarov
-Copyright (C) 2024 Frank Richter
+Copyright (C) 2024-2026 Frank Richter
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -894,6 +894,19 @@ static q2proto_error_t r1q2_server_write(q2proto_servercontext_t *context, uintp
     case Q2P_SVC_SPAWNBASELINE:
         return r1q2_server_write_spawnbaseline(context, io_arg, &svc_message->spawnbaseline);
 
+    case Q2P_SVC_TEMP_ENTITY:
+        // Usually written by game, but may be needed for demo writing
+        return q2proto_common_server_write_temp_entity_short(io_arg, context->server_info->game_api,
+                                                             &svc_message->temp_entity);
+
+    case Q2P_SVC_MUZZLEFLASH:
+        // Usually written by game, but may be needed for demo writing
+        return q2proto_common_server_write_muzzleflash(io_arg, svc_muzzleflash, &svc_message->muzzleflash, MZ_SILENCED);
+
+    case Q2P_SVC_MUZZLEFLASH2:
+        // Usually written by game, but may be needed for demo writing
+        return q2proto_common_server_write_muzzleflash(io_arg, svc_muzzleflash2, &svc_message->muzzleflash, 0);
+
     case Q2P_SVC_CENTERPRINT:
         return q2proto_common_server_write_centerprint(io_arg, &svc_message->centerprint);
 
@@ -903,24 +916,20 @@ static q2proto_error_t r1q2_server_write(q2proto_servercontext_t *context, uintp
     case Q2P_SVC_FRAME:
         return r1q2_server_write_frame(context, io_arg, &svc_message->frame);
 
+    case Q2P_SVC_INVENTORY:
+        // Usually written by game, but may be needed for demo writing
+        return q2proto_common_server_write_inventory(io_arg, &svc_message->inventory);
+
     case Q2P_SVC_FRAME_ENTITY_DELTA:
         return r1q2_server_write_frame_entity_delta(context, io_arg, &svc_message->frame_entity_delta);
 
     case Q2P_SVC_LAYOUT:
+        // Usually written by game, but may be needed for demo writing
         return q2proto_common_server_write_layout(io_arg, &svc_message->layout);
 
     default:
         break;
     }
-
-    /* The following messages are currently not covered,
-     * as they're actually sent by game code:
-     *  muzzleflash
-     *  muzzleflash2
-     *  temp_entity
-     *  inventory
-     * 'layout' is needed for demo writing, so handle it here as well.
-     */
 
     return Q2P_ERR_NOT_IMPLEMENTED;
 }
@@ -1167,7 +1176,7 @@ static q2proto_error_t r1q2_server_write_playerstate(uintptr_t io_arg, const q2p
         flags |= PS_KICKANGLES;
     if (playerstate->blend.delta_bits != 0)
         flags |= PS_BLEND;
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED_V2
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_DAMAGE_BLEND
     if (playerstate->damage_blend.delta_bits != 0)
         return Q2P_ERR_BAD_DATA;
 #endif
@@ -1196,7 +1205,7 @@ static q2proto_error_t r1q2_server_write_playerstate(uintptr_t io_arg, const q2p
         return Q2P_ERR_BAD_DATA;
     if (playerstate->delta_bits & Q2P_PSD_GUNRATE)
         return Q2P_ERR_BAD_DATA;
-#if Q2PROTO_PLAYER_STATE_FEATURES == Q2PROTO_FEATURES_Q2PRO_EXTENDED_V2
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_FOG
     if (playerstate->fog.flags != 0 || playerstate->fog.global.color.delta_bits != 0
         || playerstate->fog.height.start_color.delta_bits != 0 || playerstate->fog.height.end_color.delta_bits != 0)
         return Q2P_ERR_BAD_DATA;

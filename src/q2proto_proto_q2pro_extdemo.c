@@ -2,7 +2,7 @@
 Copyright (C) 1997-2001 Id Software, Inc.
 Copyright (C) 2003-2011 Richard Stanway
 Copyright (C) 2003-2024 Andrey Nazarov
-Copyright (C) 2024 Frank Richter
+Copyright (C) 2024-2026 Frank Richter
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -340,7 +340,7 @@ static q2proto_error_t q2pro_extdemo_client_read_playerstate(q2proto_clientconte
         uint16_t gun_index_and_skin;
         READ_CHECKED(client_read, io_arg, gun_index_and_skin, u16);
         playerstate->gunindex = gun_index_and_skin & Q2PRO_GUNINDEX_MASK;
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_GUNSKIN
         playerstate->gunskin = gun_index_and_skin >> Q2PRO_GUNINDEX_BITS;
 #endif
     }
@@ -357,7 +357,7 @@ static q2proto_error_t q2pro_extdemo_client_read_playerstate(q2proto_clientconte
         if (has_q2pro_extensions_v2) {
             q2proto_color_delta_t damage_blend = {0};
             CHECKED(client_read, io_arg, client_read_q2pro_extv2_blends(io_arg, &playerstate->blend, &damage_blend));
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED_V2
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_DAMAGE_BLEND
             memcpy(&playerstate->damage_blend, &damage_blend, sizeof(damage_blend));
 #endif
         } else {
@@ -369,7 +369,7 @@ static q2proto_error_t q2pro_extdemo_client_read_playerstate(q2proto_clientconte
     if (has_playerfog && flags & PS_Q2PRO_PLAYERFOG) {
         q2proto_svc_fog_t fog = {0};
         CHECKED(client_read, io_arg, q2proto_q2pro_client_read_playerfog(context, io_arg, &fog));
-#if Q2PROTO_PLAYER_STATE_FEATURES == Q2PROTO_FEATURES_Q2PRO_EXTENDED_V2
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_FOG
         playerstate->fog = fog;
 #endif
     }
@@ -541,30 +541,38 @@ static q2proto_error_t q2pro_extdemo_server_write(q2proto_servercontext_t *conte
     case Q2P_SVC_CONFIGSTRING:
         return q2proto_common_server_write_configstring(io_arg, &svc_message->configstring);
 
+    case Q2P_SVC_TEMP_ENTITY:
+        // Usually written by game, but may be needed for demo writing
+        return q2proto_q2pro_server_write_temp_entity(context->protocol, context->server_info, io_arg, &svc_message->temp_entity);
+
+    case Q2P_SVC_MUZZLEFLASH:
+        // Usually written by game, but may be needed for demo writing
+        return q2proto_common_server_write_muzzleflash(io_arg, svc_muzzleflash, &svc_message->muzzleflash, MZ_SILENCED);
+
+    case Q2P_SVC_MUZZLEFLASH2:
+        // Usually written by game, but may be needed for demo writing
+        return q2proto_common_server_write_muzzleflash(io_arg, svc_muzzleflash2, &svc_message->muzzleflash, 0);
+
     case Q2P_SVC_CENTERPRINT:
         return q2proto_common_server_write_centerprint(io_arg, &svc_message->centerprint);
 
     case Q2P_SVC_FRAME:
         return q2pro_extdemo_server_write_frame(context, io_arg, &svc_message->frame);
 
+    case Q2P_SVC_INVENTORY:
+        // Usually written by game, but may be needed for demo writing
+        return q2proto_common_server_write_inventory(io_arg, &svc_message->inventory);
+
     case Q2P_SVC_FRAME_ENTITY_DELTA:
         return q2pro_extdemo_server_write_frame_entity_delta(context, io_arg, &svc_message->frame_entity_delta);
 
     case Q2P_SVC_LAYOUT:
+        // Usually written by game, but may be needed for demo writing
         return q2proto_common_server_write_layout(io_arg, &svc_message->layout);
 
     default:
         break;
     }
-
-    /* The following messages are currently not covered,
-     * as they're actually sent by game code:
-     *  muzzleflash
-     *  muzzleflash2
-     *  temp_entity
-     *  inventory
-     * 'layout' is needed for demo writing, so handle it here as well.
-     */
 
     return Q2P_ERR_NOT_IMPLEMENTED;
 }
@@ -627,7 +635,7 @@ static q2proto_error_t q2pro_extdemo_server_write_playerstate(q2proto_servercont
         flags |= PS_KICKANGLES;
     if (playerstate->blend.delta_bits != 0)
         flags |= PS_BLEND;
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED_V2
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_DAMAGE_BLEND
     if (playerstate->damage_blend.delta_bits != 0) {
         if (has_q2pro_extensions_v2)
             flags |= PS_BLEND;
@@ -648,7 +656,7 @@ static q2proto_error_t q2pro_extdemo_server_write_playerstate(q2proto_servercont
         return Q2P_ERR_BAD_DATA;
     if (!has_q2pro_extensions_v2 && playerstate->statbits > UINT32_MAX)
         return Q2P_ERR_BAD_DATA;
-#if Q2PROTO_PLAYER_STATE_FEATURES == Q2PROTO_FEATURES_Q2PRO_EXTENDED_V2
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_FOG
     if (playerstate->fog.flags != 0 || playerstate->fog.global.color.delta_bits != 0
         || playerstate->fog.height.start_color.delta_bits != 0 || playerstate->fog.height.end_color.delta_bits != 0)
         flags |= PS_Q2PRO_PLAYERFOG;
@@ -736,7 +744,7 @@ static q2proto_error_t q2pro_extdemo_server_write_playerstate(q2proto_servercont
 
     if (flags & PS_WEAPONINDEX) {
         uint16_t gun_index_and_skin = playerstate->gunindex;
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_GUNSKIN
         gun_index_and_skin |= (playerstate->gunskin << Q2PRO_GUNINDEX_BITS);
 #endif
         WRITE_CHECKED(server_write, io_arg, u16, gun_index_and_skin);
@@ -761,7 +769,7 @@ static q2proto_error_t q2pro_extdemo_server_write_playerstate(q2proto_servercont
     if (flags & PS_BLEND) {
         if (has_q2pro_extensions_v2) {
             const q2proto_color_delta_t *damage_blend;
-#if Q2PROTO_PLAYER_STATE_FEATURES >= Q2PROTO_FEATURES_Q2PRO_EXTENDED_V2
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_DAMAGE_BLEND
             damage_blend = &playerstate->damage_blend;
 #else
             const q2proto_color_delta_t null_blend = {0};
@@ -776,7 +784,7 @@ static q2proto_error_t q2pro_extdemo_server_write_playerstate(q2proto_servercont
         }
     }
 
-#if Q2PROTO_PLAYER_STATE_FEATURES == Q2PROTO_FEATURES_Q2PRO_EXTENDED_V2
+#if Q2PROTO_PLAYER_STATE_FEATURES & Q2PROTO_FEATURE_FLAG_PLAYER_FOG
     if (flags & PS_Q2PRO_PLAYERFOG)
         CHECKED(server_write, io_arg, q2proto_q2pro_server_write_playerfog(context, io_arg, &playerstate->fog));
 #endif

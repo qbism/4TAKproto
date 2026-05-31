@@ -24,6 +24,47 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 #include "q2proto_internal.h"
 
+const char *q2proto_svc_message_str(q2proto_svc_message_type_t type)
+{
+    switch(type)
+    {
+#define S(X)          \
+    case Q2P_SVC_##X: \
+        return #X;
+
+    S(INVALID)
+    S(MUZZLEFLASH)
+    S(MUZZLEFLASH2)
+    S(TEMP_ENTITY)
+    S(NOP)
+    S(DISCONNECT)
+    S(RECONNECT)
+    S(SOUND)
+    S(PRINT)
+    S(STUFFTEXT)
+    S(SERVERDATA)
+    S(CONFIGSTRING)
+    S(SPAWNBASELINE)
+    S(CENTERPRINT)
+    S(DOWNLOAD)
+    S(FRAME)
+    S(INVENTORY)
+    S(LAYOUT)
+    S(FRAME_ENTITY_DELTA)
+    S(SETTING)
+    S(DAMAGE)
+    S(FOG)
+    S(POI)
+    S(HELP_PATH)
+    S(ACHIEVEMENT)
+    S(LOCPRINT)
+
+#undef S
+    }
+
+    return q2proto_va("%d", type);
+}
+
 static int compare_ints(const void *a, const void *b)
 {
     int arg1 = *(const int *)a;
@@ -181,21 +222,56 @@ q2proto_error_t q2proto_init_servercontext(q2proto_servercontext_t *context, con
     return Q2P_ERR_PROTOCOL_NOT_SUPPORTED;
 }
 
+q2proto_protocol_t q2proto_get_demo_protocol(const q2proto_server_info_t *server_info)
+{
+    switch (server_info->game_api) {
+    case Q2PROTO_GAME_VANILLA:
+        return Q2P_PROTOCOL_VANILLA;
+    case Q2PROTO_GAME_Q2PRO_EXTENDED:
+        return Q2P_PROTOCOL_Q2PRO_EXTENDED_DEMO;
+    case Q2PROTO_GAME_Q2PRO_EXTENDED_V2:
+        return Q2P_PROTOCOL_Q2PRO_EXTENDED_DEMO_PLAYERFOG;
+    case Q2PROTO_GAME_RERELEASE:
+        return Q2P_PROTOCOL_KEX;
+    }
+    return Q2P_PROTOCOL_INVALID;
+}
+
 #define MIN_DEMO_PACKET 512 // from Q2PRO MIN_PACKETLEN
 
-q2proto_error_t q2proto_init_servercontext_demo(q2proto_servercontext_t *context,
+q2proto_error_t q2proto_init_servercontext_demo(q2proto_servercontext_t *context, q2proto_protocol_t protocol,
                                                 const q2proto_server_info_t *server_info, size_t *max_msg_len)
 {
+    if (protocol == Q2P_PROTOCOL_INVALID) {
+        protocol = q2proto_get_demo_protocol(server_info);
+    } else {
+        bool protocol_valid = false;
+        q2proto_protocol_t valid_protocols[Q2P_NUM_PROTOCOLS];
+        size_t num_valid_protocols =
+            q2proto_get_protocols_for_gametypes(valid_protocols, Q2P_NUM_PROTOCOLS, &server_info->game_api, 1);
+        for (size_t i = 0; i < num_valid_protocols; i++)
+            protocol_valid |= protocol == valid_protocols[i];
+        if (!protocol_valid)
+            return Q2P_ERR_GAMETYPE_UNSUPPORTED;
+    }
+
     q2proto_connect_t connect_info;
     memset(&connect_info, 0, sizeof(connect_info));
+    connect_info.has_zlib = Q2PROTO_COMPRESSION_DEFLATE;
 
     size_t demo_packet_size = server_info->default_packet_length ? server_info->default_packet_length
                                                                  : 1390; // Default to Vanilla Q2 limit if none is given
     demo_packet_size = MAX(server_info->default_packet_length, MIN_DEMO_PACKET); // ensure a minimal packet size
+    connect_info.protocol = protocol;
     connect_info.packet_length = demo_packet_size;
-    switch (server_info->game_api) {
-    case Q2PROTO_GAME_VANILLA:
-        connect_info.protocol = Q2P_PROTOCOL_VANILLA;
+    switch (protocol)
+    {
+    case Q2P_PROTOCOL_INVALID:
+    case Q2P_NUM_PROTOCOLS:
+        return Q2P_ERR_GAMETYPE_UNSUPPORTED;
+    case Q2P_PROTOCOL_OLD_DEMO:
+    case Q2P_PROTOCOL_VANILLA:
+    case Q2P_PROTOCOL_R1Q2:
         *max_msg_len = demo_packet_size;
         break;
     case Q2PROTO_GAME_Q2PRO_EXTENDED:
