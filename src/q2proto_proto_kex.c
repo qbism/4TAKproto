@@ -957,6 +957,7 @@ static q2proto_error_t kex_server_fill_serverdata(q2proto_servercontext_t *conte
                                                   q2proto_svc_serverdata_t *serverdata)
 {
     serverdata->protocol = PROTOCOL_KEX;
+    serverdata->server_fps = context->server_info->server_fps;
     return Q2P_ERR_SUCCESS;
 }
 

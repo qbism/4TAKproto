@@ -1390,6 +1390,7 @@ static q2proto_error_t q2repro_server_fill_serverdata(q2proto_servercontext_t *c
     serverdata->q2pro.extensions = context->server_info->game_api >= Q2PROTO_GAME_Q2PRO_EXTENDED;
     serverdata->q2pro.extensions_v2 = context->server_info->game_api >= Q2PROTO_GAME_Q2PRO_EXTENDED_V2;
     serverdata->q2repro.game3_compat = context->server_info->game_api != Q2PROTO_GAME_4TAK;
+    serverdata->server_fps = context->server_info->server_fps;
     return Q2P_ERR_SUCCESS;
 }
 

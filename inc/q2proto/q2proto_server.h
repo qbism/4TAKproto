@@ -65,6 +65,8 @@ typedef struct q2proto_server_info_s {
     q2proto_game_api_t game_api;
     /// Default packet length value, used for \c packet_length member of q2proto_connect_t.
     int default_packet_length;
+    /// Server update rate in FPS
+    int server_fps;
 } q2proto_server_info_t;
 
 /**
