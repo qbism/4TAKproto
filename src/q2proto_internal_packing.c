@@ -340,6 +340,7 @@ _q2proto_packing_flavor_t _q2proto_get_packing_flavor(q2proto_servercontext_t *c
     switch(context->protocol)
     {
     case Q2P_PROTOCOL_Q2REPRO:
+    case Q2P_PROTOCOL_4TAK:
         return _Q2P_PACKING_REPRO;
     case Q2P_PROTOCOL_KEX:
     case Q2P_PROTOCOL_KEX_DEMOS:
