@@ -232,6 +232,7 @@ q2proto_protocol_t q2proto_get_demo_protocol(const q2proto_server_info_t *server
     case Q2PROTO_GAME_Q2PRO_EXTENDED_V2:
         return Q2P_PROTOCOL_Q2PRO_EXTENDED_DEMO_PLAYERFOG;
     case Q2PROTO_GAME_RERELEASE:
+    case Q2PROTO_GAME_4TAK:
         return Q2P_PROTOCOL_KEX;
     }
     return Q2P_PROTOCOL_INVALID;
